@@ -1,0 +1,41 @@
+services:
+  database:
+    image: postgres:15.3-alpine3.18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5435:5432"
+    volumes:
+      - ./decrypto_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  backend:
+    build: ../
+    ports:
+      - "8080:80"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      SERVER_HOST: ${SERVER_HOST}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+      PROJECT_NAME: ${PROJECT_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      FIRST_SUPERUSER: ${FIRST_SUPERUSER}
+      FIRST_SUPERUSER_USERNAME: ${FIRST_SUPERUSER_USERNAME}
+      FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD}
+      FIRST_SUPERUSER_NAME: ${FIRST_SUPERUSER_NAME}
+      USERS_OPEN_REGISTRATION: ${USERS_OPEN_REGISTRATION}
+      POSTGRES_SERVER: "database:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB}
+      EVENT_START_TIME: ${EVENT_START_TIME}
+      EVENT_END_TIME: ${EVENT_END_TIME}
+      RATE_LIMIT: ${RATE_LIMIT}

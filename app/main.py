@@ -6,6 +6,12 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette_context.middleware import RawContextMiddleware
 from starlette_context.plugins import RequestIdPlugin
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+import dotenv
+import os
 
 from app.api.api_v1.api import api_router
 from app.core.config import settings
@@ -81,6 +87,15 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+
 app.add_middleware(RawContextMiddleware, plugins=[RequestIdPlugin()])
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    application_limits=[os.environ.get("RATE_LIMIT", "30/minute")],
+)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
